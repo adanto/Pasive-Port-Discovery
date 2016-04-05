@@ -40,8 +40,6 @@ def main_manager(ips, ports):
 	print ips_info
 
 
-
-
 # This scanner finds up hosts in a ips range and returns the ones online in a string 
 def sP_scan(ips):
 	# first scanner to see who is online
@@ -70,7 +68,15 @@ def sV_scanner(host, ports):
 		print 'There was an error with the parameters'
 		usage()
 
-	return nm[host]
+	if 'tcp' in nm[host]:
+		services = {}
+		keys = nm[host]['tcp'].keys()
+		for key in keys:
+			# we only want the port and the service name, so thats what we return 
+			services[key] = {'name': nm[host]['tcp'][key]['name']}
+		return services
+	else:
+		return {}
 
 
 # loads the global variables to be able to use them in the program
@@ -78,11 +84,12 @@ def load_globals():
 	global ips_info
 	ips_info = {}
 
+
 if __name__ == "__main__":
 
 	load_globals()
 
-	ips = '192.168.100.11/24'
+	ips = '192.168.100.1'
 	ports = '1, 5, 7, 18, 20, 21, 22, 23, 25, 29, 37, 42, 43, 49, 53, 69, 70, 79, 80, 103, 108, 109, 110, 115, 118, 119, 137, 139, 143, 150, 156, 161, 179, 190, 194, 197, 389, 396, 443, 444, 445, 458, 546, 547, 563, 569, 1080'
 
 	main_manager(ips, ports)
