@@ -3,6 +3,8 @@
 import sys
 import nmap
 
+# import time
+
 ################################################################################
 ###############################     HELP     ###################################
 ################################################################################
@@ -30,14 +32,60 @@ def main_manager(ips, ports):
 	# hosts that responded to the pings
 	pinged_hosts = sP_scan(ips)
 
+	# find out what services has each host open
 	for host in pinged_hosts:
 		if host not in ips_info.keys():
 			ips_info[host] = [{}, sV_scanner(host, ports)]
 		else:
-			ips_info[host][0] = ips_info[host][0]
-			ips_info[host][1] = sV_scanner(host, ports)
+			ips_info[host].append(sV_scanner(host, ports))
 
-	print ips_info
+	getDifferences()
+
+
+def getDifferences():
+	global ips_info
+
+	# in this section, we need find new hosts in the net  
+	for host in ips_info:
+		# last record
+		actual_ports = ips_info[host][-1]
+		
+		# last -1
+		last_ports = ips_info[host][-2]
+
+		differences = []
+		for key in actual_ports:
+			if key in last_ports or last_ports == {}:
+				# this user was online in the last record
+				if last_ports[key] == actual_ports[key]:
+					# still the same
+					pass
+				else:
+					differences.append(key + ": " + close_some_and_open_some_services(actual_ports[key], last_ports[key]))
+			else:
+				# this user was not online in the last record
+				differences.append(key + ": wakes up with ports " + ", ".join(actual_ports))
+
+
+# here we find the differences between the open ports of the last record, and the record we just made
+def close_some_and_open_some_services(actual, last):
+	opened = []
+	closed = [] 
+
+	for i in actual:
+		if i in last:
+			pass
+		else:
+			opened.append(i)
+
+	for i in last:
+		if i in actual:
+			pass
+		else:
+			closed.append(i)
+
+	return "Opened ports: " + ", ".join(opened) + ". Closed ports: " + ", ".join(closed)
+
 
 
 # This scanner finds up hosts in a ips range and returns the ones online in a string 
