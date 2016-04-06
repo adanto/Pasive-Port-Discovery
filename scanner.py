@@ -62,7 +62,11 @@ def main_manager(ips, ports):
 		print IPS_INFO
 
 		# comments to send to telegram
-		# comments = getDifferencesInText()
+		comments = getDifferencesInText()
+
+		print comments
+
+		raw_input()
 
 
 
@@ -87,16 +91,39 @@ def getDifferencesInText():
 
 		comment = ""
 
-		if actual_ports == {}:
-			if last_ports == {}:
-				comment = ''
+		if actual_ports['status'] == 'offline':
+			if last_ports['status'] == 'offline':
+				pass
 			else:
-				comment = host + ": wakes up with no ports open"
-		elif actual_ports == last_ports:
+				# it was online, not anymore... rip 
+				comment = host + ": shuts down"
+
+		elif actual_ports.keys() == ['status', 'timestamp']:
+			# wow! we found a mobile! and it has no open ports! D: 
+			comment = host + ": wakes up with no ports apparently open"
+
+		elif actual_ports.keys() == last_ports.keys():
+			# same ports
 			pass
-		elif last_ports == {}:
+
+		elif last_ports['status'] == 'offline':
+
+			# we were offline, but now we have started listening
+			# delete those keys to make it easy to get the comment (we dont need them anymore)
+			actual_ports.pop("status", None)
+			actual_ports.pop("timestamp", None)
+
 			comment = host + ": wakes up with ports " + ", ".join([str(port) + " (" + actual_ports[port]['name'] + ")" for port in actual_ports])
+
 		else:
+
+			# delete those keys to make it easy to get the comment (we dont need them anymore)
+
+			actual_ports.pop("status", None)
+			actual_ports.pop("timestamp", None)
+			last_ports.pop("status", None)
+			last_ports.pop("timestamp", None)
+
 			comment = host + ": modifies his opened ports: " + close_some_and_open_some_services(actual_ports, last_ports)
 
 		if comment:
