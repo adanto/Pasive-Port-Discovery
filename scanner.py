@@ -29,17 +29,23 @@ global ips_info
 def main_manager(ips, ports):
 	global ips_info
 
-	# hosts that responded to the pings
-	pinged_hosts = sP_scan(ips)
+	while True:
 
-	# find out what services has each host open
-	for host in pinged_hosts:
-		if host not in ips_info.keys():
-			ips_info[host] = [{}, sV_scanner(host, ports)]
-		else:
-			ips_info[host].append(sV_scanner(host, ports))
+		# hosts that responded to the pings
+		pinged_hosts = sP_scan(ips)
 
-	getDifferences()
+		print pinged_hosts
+
+		# find out what services has each host open
+		for host in pinged_hosts:
+			if host not in ips_info.keys():
+				ips_info[host] = [{}, sV_scanner(host, ports)]
+			else:
+				ips_info[host].append(sV_scanner(host, ports))
+
+		getDifferences()
+
+		print ips_info
 
 
 def getDifferences():
@@ -53,18 +59,24 @@ def getDifferences():
 		# last -1
 		last_ports = ips_info[host][-2]
 
-		differences = []
-		for key in actual_ports:
-			if key in last_ports or last_ports == {}:
-				# this user was online in the last record
-				if last_ports[key] == actual_ports[key]:
-					# still the same
-					pass
-				else:
-					differences.append(key + ": " + close_some_and_open_some_services(actual_ports[key], last_ports[key]))
+		response = ""
+
+		if actual_ports == {}:
+			if last_ports == {}:
+				response = ''
 			else:
-				# this user was not online in the last record
-				differences.append(key + ": wakes up with ports " + ", ".join(actual_ports))
+				response = host + ": wakes up with no ports open"
+		elif actual_ports == last_ports:
+			pass
+		elif last_ports == {}:
+			response = host + ": wakes up with ports " + ", ".join([str(port) + " (" + actual_ports[port]['name'] + ")" for port in actual_ports])
+		else:
+			response = host + ": modifies his opened ports: " + close_some_and_open_some_services(actual_ports, last_ports)
+
+		print response
+
+
+
 
 
 # here we find the differences between the open ports of the last record, and the record we just made
@@ -73,28 +85,25 @@ def close_some_and_open_some_services(actual, last):
 	closed = [] 
 
 	for i in actual:
-		if i in last:
-			pass
-		else:
+		if i not in last:
 			opened.append(i)
 
 	for i in last:
-		if i in actual:
-			pass
-		else:
+		if i not in actual:
 			closed.append(i)
 
 	return "Opened ports: " + ", ".join(opened) + ". Closed ports: " + ", ".join(closed)
 
 
 
-# This scanner finds up hosts in a ips range and returns the ones online in a string 
+# This scanner finds up hosts in the ips range and returns the ones online in a string 
 def sP_scan(ips):
 	# first scanner to see who is online
 	nm = nmap.PortScanner()
 
 	# -sP option to use pings to determine who is hearing 
 	nm.scan(hosts=ips, arguments='-sP')
+	# nm.scan(hosts=ips)
 
 	return nm.all_hosts()
 
@@ -116,14 +125,24 @@ def sV_scanner(host, ports):
 		print 'There was an error with the parameters'
 		usage()
 
-	if 'tcp' in nm[host]:
-		services = {}
-		keys = nm[host]['tcp'].keys()
-		for key in keys:
-			# we only want the port and the service name, so thats what we return 
-			services[key] = {'name': nm[host]['tcp'][key]['name']}
-		return services
-	else:
+	# when scanning a android, it returns a null array (dont know why)
+	if nm == []:
+		return {}
+
+	try:
+		# androids are tricky
+		if 'tcp' in nm[host]:
+			services = {}
+			keys = nm[host]['tcp'].keys()
+			for key in keys:
+				# we only want the port and the service name, so thats what we return 
+				services[key] = {'name': nm[host]['tcp'][key]['name']}
+			return services
+		else:
+			return {}
+
+	except KeyError:
+		print "KeyError"
 		return {}
 
 
@@ -137,7 +156,7 @@ if __name__ == "__main__":
 
 	load_globals()
 
-	ips = '192.168.100.1'
+	ips = '192.168.100.10/24'
 	ports = '1, 5, 7, 18, 20, 21, 22, 23, 25, 29, 37, 42, 43, 49, 53, 69, 70, 79, 80, 103, 108, 109, 110, 115, 118, 119, 137, 139, 143, 150, 156, 161, 179, 190, 194, 197, 389, 396, 443, 444, 445, 458, 546, 547, 563, 569, 1080'
 
 	main_manager(ips, ports)
