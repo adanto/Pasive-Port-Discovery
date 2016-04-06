@@ -2,6 +2,7 @@
 
 import sys
 import nmap
+import json
 
 import requests
 
@@ -67,28 +68,31 @@ def main_manager(ips, ports):
 			if host not in pinged_hosts:
 				IPS_INFO[host].append({'status':'offline', 'timestamp': getCurrentTimestamp()})
 
-		print IPS_INFO
+		writeDictInfoToFile()
 
 		# comments to send to telegram
 		comments = getDifferencesInText()
 
-		print IPS_INFO
-
 		sendMessagesToBot(comments)
 
-		raw_input()
+		print "waiting..."
+
+		time.sleep(3)
+
+
+def writeDictInfoToFile():
+	with open('output', 'w') as f:
+		f.write(json.dumps(IPS_INFO, separators=(',',':')))
 
 
 def sendMessagesToBot(comments):
 
-	myBot = bot()
+	myBot = bot('bot217362196:AAHZNgkySqsbbIfPTWzCE1NYquVcCZovHno', 8778776)
 
 	if len(comments) > 0:
 		myBot.sendPostMessage('##### Updates from ' + str(time.strftime("%H:%M:%S") + ' #####'))
 		for com in comments:
 			myBot.sendPostMessage(com)
-
-		myBot.sendPostMessage('##### End of Updates #####')
 
 
 # returns the news about all the hosts in an array
@@ -115,7 +119,7 @@ def getDifferencesInText():
 				# it was online, not anymore... rip 
 				comment = host + ": shuts down"
 
-		elif actual_ports.keys() == ['status', 'timestamp']:
+		elif actual_ports.keys() == ['status', 'timestamp'] and last_ports['status'] == 'offline':
 			# wow! we found a mobile! and it has no open ports! D: 
 			comment = host + ": wakes up with no ports apparently open"
 
@@ -124,7 +128,6 @@ def getDifferencesInText():
 			pass
 
 		elif last_ports['status'] == 'offline':
-
 			# we were offline, but now we have started listening
 
 			comment = host + ": wakes up with ports " + ", ".join([str(port) + " (" + actual_ports[port]['name'] + ")" for port in actual_ports if port != 'status' and port != 'timestamp'])
@@ -141,20 +144,52 @@ def getDifferencesInText():
 
 # here we find the differences between the open ports of the last record, and the record we just made
 def close_some_and_open_some_services(actual, last):
-	opened = []
-	closed = [] 
+	opened = ""
+	closed = ""
 
-	for i in actual:
-		if i != 'status' and i != 'timestamp':
-			if i not in last:
-				opened.append(i)
+	i = 0
 
-	for i in last:
-		if i != 'status' and i != 'timestamp':
-			if i not in actual:
-				closed.append(i)
+	# we need some error handling because there are times when we think that there is an open port, but when we try to test it, it's not open anymore
+	try:
+		# sometimes, we open(?) the ports in the middle of a scan
+		for i in actual:
+			if i != 'status' and i != 'timestamp':
+				if i not in last:
+					opened += str(i) + " (" + actual[i]['name'] + "), "
+	except KeyError:
+		opened += str(i) + " (" + actual[i]['name'] + "), "
 
-	return "Opened ports: " + ", ".join(opened) + ". Closed ports: " + ", ".join(closed)
+	finally:
+
+		try:
+			# sometimes, we close the ports in the middle of a scan
+			for i in last:
+				if i != 'status' and i != 'timestamp':
+					if i not in actual:
+						closed += str(i) + " (" + last[i]['name'] + "), "
+			
+		except KeyError:
+			print "here!!"
+			closed += str(i) + " (" + last[i]['name'] + "), "
+			print "closed here -> " + closed
+
+		finally:
+
+			if opened:
+				opened = opened[:-2]
+			else:
+				opened = "None"
+
+			
+			if closed:
+				closed = closed[:-2]
+			else:
+				closed = "None"
+
+			# at the end, we get what we want BANZAII
+			return "Opened ports: " + opened + ". Closed ports: " + closed
+
+	
 
 
 # This scanner finds up hosts in the ips range and returns the ones online in a string 
