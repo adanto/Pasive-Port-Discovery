@@ -18,11 +18,12 @@ import time
 def usage():
 	print "\nPasive Port Discovery"
 	print
-	print " Usage: ./scanner.py -t <Token> -c <conversation id> -o <output.file>" 
+	print " Usage: ./scanner.py -t <Token> -c <conversation id> -o <output.file> -i <target ip> -p <ports>" 
+	print "   -h --help 		- opens this help"
 	print "   -t --token 		- token from the bot that you want to use"
 	print "   -c --chat_id 	- chats id where you want to send the messages"
 	print "   -o --output 		- output file where you want to store the JSON record"
-	print "   -i --ips 			- ips that you want to scan. See the examples to understand the types"
+	print "   -i --ips 		- ips that you want to scan. See the examples to understand the types"
 	print "   -p --ports 		- ports that you want to scan. See the examples below"
 	print 
 	print 
