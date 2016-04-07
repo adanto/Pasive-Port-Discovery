@@ -326,7 +326,7 @@ def load_globals():
 	INITIAL_TIME = time.time()
 	IPS_INFO = {}
 
-	print ports
+	# print ports
 
 	return ips, ports
 
