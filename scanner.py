@@ -67,7 +67,7 @@ def main_manager(ips, ports):
 	while True:
 
 		# it always enters the first time
-		if repetition % 3 == 0:
+		if repetition % 2 == 0:
 
 			print "[*] Scanning for up hosts"
 
@@ -101,14 +101,14 @@ def main_manager(ips, ports):
 		# no differences
 		if len(comments) == 0:
 			print "[*] There was no new info, waiting time increased"
-			repetition += 1
+			repetition = (repeticion + 1) % 2
 		else:
 			print "[*] New info, reloading waiting time"
 			repetition = 0
 
 		# we are gonna wait 1 minute + 3 * repetition
-		print "[*] Waiting for", 120 + 120 * repetition, 'seconds'
-		time.sleep(120 + 120 * repetition)
+		print "[*] Waiting for", 300 + 120 * repetition, 'seconds'
+		time.sleep(300 + 60 * repetition)
 
 
 
