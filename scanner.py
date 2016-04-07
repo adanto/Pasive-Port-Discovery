@@ -108,8 +108,8 @@ def main_manager(ips, ports):
 			repetition = 0
 
 		# we are gonna wait 1 minute + 3 * repetition
-		print "[*] Waiting for", 300 + 120 * repetition, 'seconds'
-		time.sleep(300 + 60 * repetition)
+		print "[*] Waiting for", 30 + 30 * repetition, 'seconds'
+		time.sleep(30 + 30 * repetition)
 
 
 
@@ -230,7 +230,7 @@ def sP_scan(ips):
 	nm = nmap.PortScanner()
 
 	# -sP option to use pings to determine who is hearing 
-	nm.scan(hosts=ips, arguments='-sP')
+	nm.scan(hosts=ips, arguments='-sP', sudo=True)
 	# nm.scan(hosts=ips)
 
 	return nm.all_hosts()
@@ -246,7 +246,7 @@ def sV_scanner(host, ports):
 	nm = nmap.PortScanner()
 
 	# initialize the scanner
-	nm.scan(host, ports)
+	nm.scan(hosts=host, ports=ports, arguments='-sV', sudo=True)
 
 	# testing if there were any errors
 	if 'error' in nm.scaninfo():
