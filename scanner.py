@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import sys
+# necessary to get arguments
+import getopt
+
 import nmap
 import json
 
@@ -13,11 +16,22 @@ import time
 ################################################################################
 
 def usage():
-	print "Pasive Port Discovery"
+	print "\nPasive Port Discovery"
 	print
-	print "Usage: ./scanner.py -a <API key> -c <conversation id>"
+	print " Usage: ./scanner.py -t <Token> -c <conversation id> -o <output.file>" 
+	print "   -t --token 		- token from the bot that you want to use"
+	print "   -c --chat_id 	- chats id where you want to send the messages"
+	print "   -o --output 		- output file where you want to store the JSON record"
+	print "   -i --ips 			- ips that you want to scan. See the examples to understand the types"
+	print "   -p --ports 		- ports that you want to scan. See the examples below"
 	print 
-	print
+	print 
+	print " Examples:"
+	print "   python scanner.py -t bot123:32112332112312123123 -c 1235 -o output.json -i 192.168.100.0 -p 80"
+	print "   python scanner.py -t bot123:32112332112312123123 -c 1235 -o output.json -i 192.168.100.0 -p 80-1000"
+	print "   python scanner.py -t bot123:32112332112312123123 -c 1235 -o output.json -i 192.168.100.0/24 -p 80"
+	print "   python scanner.py -t bot123:32112332112312123123 -c 1235 -o output.json -i 192.168.100.1,192.168.100.2 -p 80"
+	print 
 
 	sys.exit(0)
 
@@ -48,13 +62,22 @@ class bot:
 def main_manager(ips, ports):
 	global IPS_INFO
 
+	repetition = 0
+
 	while True:
 
-		# hosts that responded to the pings
-		pinged_hosts = sP_scan(ips)
+		# it always enters the first time
+		if repetition % 3 == 0:
 
-		print pinged_hosts
+			print "[*] Scanning for up hosts"
 
+			# hosts that responded to the pings
+			pinged_hosts = sP_scan(ips)
+
+		# no need to print this lol
+		# print pinged_hosts
+
+		print "[*] Scanning services for", len(pinged_hosts), "up hosts"
 		# find out what services has each host open
 		for host in pinged_hosts:
 			if host not in IPS_INFO.keys():
@@ -75,22 +98,32 @@ def main_manager(ips, ports):
 
 		sendMessagesToBot(comments)
 
-		print "waiting..."
+		# no differences
+		if len(comments) == 0:
+			print "[*] There was no new info, waiting time increased"
+			repetition += 1
+		else:
+			print "[*] New info, reloading waiting time"
+			repetition = 0
 
-		time.sleep(3)
+		# we are gonna wait 1 minute + 3 * repetition
+		print "[*] Waiting for", 120 + 120 * repetition, 'seconds'
+		time.sleep(120 + 120 * repetition)
+
 
 
 def writeDictInfoToFile():
-	with open('output', 'w') as f:
+	with open(OUTPUT_FILE, 'w') as f:
 		f.write(json.dumps(IPS_INFO, separators=(',',':')))
 
 
 def sendMessagesToBot(comments):
 
-	myBot = bot('bot217362196:AAHZNgkySqsbbIfPTWzCE1NYquVcCZovHno', 8778776)
+	myBot = bot(TOKEN, CHAT_ID)
 
 	if len(comments) > 0:
-		myBot.sendPostMessage('##### Updates from ' + str(time.strftime("%H:%M:%S") + ' #####'))
+
+		myBot.sendPostMessage('######################\n## Updates from ' + str(time.strftime("%H:%M:%S") + ' ##\n######################'))
 		for com in comments:
 			myBot.sendPostMessage(com)
 
@@ -169,9 +202,7 @@ def close_some_and_open_some_services(actual, last):
 						closed += str(i) + " (" + last[i]['name'] + "), "
 			
 		except KeyError:
-			print "here!!"
 			closed += str(i) + " (" + last[i]['name'] + "), "
-			print "closed here -> " + closed
 
 		finally:
 
@@ -218,7 +249,7 @@ def sV_scanner(host, ports):
 
 	# testing if there were any errors
 	if 'error' in nm.scaninfo():
-		print 'There was an error with the parameters'
+		print '[*] There was an error with the parameters'
 		usage()
 
 	# when scanning a android, it returns a null array (dont know why)
@@ -228,17 +259,19 @@ def sV_scanner(host, ports):
 	try:
 		# androids are tricky
 		if 'tcp' in nm[host]:
+
 			services = {'status':'online', 'timestamp': getCurrentTimestamp()}
 			keys = nm[host]['tcp'].keys()
+
 			for key in keys:
-				# we only want the port and the service name, so thats what we return 
-				services[key] = {'name': nm[host]['tcp'][key]['name']}
+				if nm[host]['tcp'][key]['state'] == 'open':
+					# we only want the port and the service name, so thats what we return 
+					services[key] = {'name': nm[host]['tcp'][key]['name']}
 			return services
 		else:
 			return {'status':'online', 'timestamp': getCurrentTimestamp()}
 
 	except KeyError:
-		print "KeyError"
 		return {'status':'online', 'timestamp': getCurrentTimestamp()}
 
 
@@ -248,17 +281,59 @@ def getCurrentTimestamp():
 
 # loads the global variables to be able to use them in the program
 def load_globals():
+	print "[*] Loading global variables"  
 	global IPS_INFO
 	global INITIAL_TIME
+	global TOKEN
+	global CHAT_ID
+	global OUTPUT_FILE
+
+
+	TOKEN = ""
+	CHAT_ID = ""
+	OUTPUT_FILE = ""
+	ips = ""
+	ports = ""
+	
+	try:
+		opts, args = getopt.getopt(sys.argv[1:],"ht:c:o:i:p:",["target", "chat_id", "output", "ips", "ports"])
+	except getopt.GetoptError:
+		usage()
+
+	for opt, arg in opts:
+		if opt == '-h':
+			usage()
+		elif opt in ("-t", "--token"):
+			TOKEN = arg
+		elif opt in ("-c", "--chat_id"):
+			CHAT_ID = arg
+		elif opt in ("-o", "--output"):
+			OUTPUT_FILE = arg
+		elif opt in ("-i", "--ips"):
+			ips = arg
+		elif opt in ("-p", "--ports"):
+			ports = arg
+
+
+	if TOKEN == "" or CHAT_ID == "" or OUTPUT_FILE == "" or ips == "" or ports == "":
+		usage()
+
+
 	INITIAL_TIME = time.time()
 	IPS_INFO = {}
 
 
+
+	return ips, ports
+
+
 if __name__ == "__main__":
 
-	load_globals()
+	print "[*] Starting scanner.py"  
 
-	ips = '192.168.100.11'
-	ports = '1, 5, 7, 18, 20, 21, 22, 23, 25, 29, 37, 42, 43, 49, 53, 69, 70, 79, 80, 103, 108, 109, 110, 115, 118, 119, 137, 139, 143, 150, 156, 161, 179, 190, 194, 197, 389, 396, 443, 444, 445, 458, 546, 547, 563, 569, 1080'
+	ips, ports = load_globals()
+
+	# ips = '192.168.100.11/24'
+	# ports = '1, 5, 7, 18, 20, 21, 22, 23, 25, 29, 37, 42, 43, 49, 53, 69, 70, 79, 80, 103, 108, 109, 110, 115, 118, 119, 137, 139, 143, 150, 156, 161, 179, 190, 194, 197, 389, 396, 443, 444, 445, 458, 546, 547, 563, 569, 1080'
 
 	main_manager(ips, ports)
