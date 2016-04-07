@@ -102,7 +102,7 @@ def main_manager(ips, ports):
 		# no differences
 		if len(comments) == 0:
 			print "[*] There was no new info, waiting time increased"
-			repetition = (repeticion + 1) % 2
+			repetition = (repetition + 1) % 2
 		else:
 			print "[*] New info, reloading waiting time"
 			repetition = 0
