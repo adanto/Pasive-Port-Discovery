@@ -251,6 +251,7 @@ def sV_scanner(host, ports):
 	# testing if there were any errors
 	if 'error' in nm.scaninfo():
 		print '[*] There was an error with the parameters'
+		print nm.scaninfo()
 		usage()
 
 	# when scanning a android, it returns a null array (dont know why)
@@ -315,6 +316,8 @@ def load_globals():
 		elif opt in ("-p", "--ports"):
 			ports = arg
 
+	if ports == 'usuals':
+		ports = '1, 5, 7, 9, 11, 13, 17, 18, 19, 20, 21, 22, 23, 25, 538, 546, 547, 37, 39, 42, 43, 49, 50, 563, 53, 63, 67, 68, 69, 70, 71, 72, 73, 587, 79, 80, 88, 95, 610, 612, 101, 102, 105, 107, 109, 110, 111, 113, 115, 117, 119, 123, 636, 137, 138, 139, 143, 161, 162, 163, 164, 174, 177, 178, 179, 694, 191, 194, 199, 535, 201, 202, 631, 204, 206, 209, 210, 213, 220, 749, 750, 245, 554, 767, 565, 347, 873, 363, 369, 370, 372, 389, 427, 434, 435, 443, 444, 445, 674, 464, 468, 992, 993, 994, 995, 487, 488, 765, 496, 500'
 
 	if TOKEN == "" or CHAT_ID == "" or OUTPUT_FILE == "" or ips == "" or ports == "":
 		usage()
@@ -323,7 +326,7 @@ def load_globals():
 	INITIAL_TIME = time.time()
 	IPS_INFO = {}
 
-
+	print ports
 
 	return ips, ports
 
