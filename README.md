@@ -14,7 +14,7 @@ $ pip install python-nmap
 Execute the script using all the necessary parameters:
 
 |short argument|long argument|description|
-|:---:| --- | --- |
+|:---:|: --- :| --- |
 |-h| --help| opens the usage |
 |-t| --token| token |
 |-c| --chat_id| chat identificator where you want to send the messages |
