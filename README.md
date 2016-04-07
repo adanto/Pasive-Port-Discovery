@@ -1,4 +1,4 @@
-# <p align="center">Pasive Port Discovery</p>
+# <p align="center">Active Host Discovery</p>
 
 <p align="center">A simple automated pasive hosts discovery using the [Telegram Bot API](https://core.telegram.org/bots/api).
 
